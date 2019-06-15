@@ -1,6 +1,6 @@
 # Arch on Thinkpad T490 (BTRFS + encryption + dual-boot)
 
-**
+**Note 1:** there is also additional packages install guide.
 **Note 2:** full commands list is located in the end of document.
 
 Was tested on:
@@ -200,7 +200,7 @@ reboot
 
 System is ready to boot. Login with root and password set before, then you can start using (sort of, it's still has almost no packages installed). Proceed next to install basic software, KDE Plasma and other additional applications.
 
-### Install additional packages
+### 4. Install additional packages
 Connect to wired or wireless network:
 ```
 wifi-menu
