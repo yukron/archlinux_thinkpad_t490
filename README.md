@@ -1,6 +1,7 @@
 # Arch on Thinkpad T490 (BTRFS + encryption + dual-boot)
 
-**Note:** full commands list is located in the end of document.
+**
+**Note 2:** full commands list is located in the end of document.
 
 Was tested on:
 - Thinkpad T490 20N2000KRT (Core i7 8565U, 16GB RAM, 512GB SSD, Intel UHD 620).
