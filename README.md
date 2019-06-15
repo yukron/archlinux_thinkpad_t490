@@ -82,8 +82,8 @@ Note: though using old-school device names (e.g. /dev/nvme0n1) could look OK for
 It can be useful in case you are installing Arch on external USB drive (or, like in my situation, if your Winows 10 decided it's time to upgrade from 1809 to 1903 and add new partition, which shifts device partitions numbers).
 
 Get UUIDs:
+`blkid`
 ```
-blkid
 /dev/nvme0n1: PTUUID="48f81834-1786-45cb-81c9-723157985d2b" PTTYPE="gpt"
 /dev/nvme0n1p1: LABEL="SYSTEM" UUID="5052-19C4" TYPE="vfat" PARTLABEL="EFI system partition" PARTUUID="e8559af3-ed5e-4f88-ac3a-be34cafff1d9"
 /dev/nvme0n1p2: PARTLABEL="Microsoft reserved partition" PARTUUID="37c6b363-727f-4d57-8e73-25eac91b393d"
@@ -194,4 +194,63 @@ Add boot record to EFI. `cryptdevice=UUID=*` is /dev/nvme0n1p6 UUID, which can b
 ```
 efibootmgr -v
 efibootmgr -d /dev/nvme0n1 -p 1 -c -L "Arch Linux" -l /vmlinuz-linux -u "cryptdevice=UUID=your_uuid_goes_here:cryptsystem root=/dev/mapper/cryptsystem rw rootflags=subvol=root initrd=/intel-ucode.img initrd=/initramfs-linux.img"
+reboot
+```
+
+System is ready to boot. Login with root and password set before, then you can start using (sort of, it's still has almost no packages installed). Proceed next to install basic software, KDE Plasma and other additional applications.
+
+#### Install packages
+Connect to wired or wireless network:
+```
+wifi-menu
+dhcpcd
+```
+
+Uncomment Color and multilib repos in `/etc/pacman.conf`:
+```
+Color
+...
+[multilib]
+Include = /etc/pacman.d/mirrorlist
+```
+
+Configure `visudo`, uncommenting line `%wheel ALL=(ALL) NOPASSWD: ALL`. With it you won't need to enter your password each time you run commands with `sudo`:
+```
+visudo
+```
+
+Create user, add to sudoers and set password.
+```
+useradd -m YOURNAME
+usermod -aG wheel YOURNAME
+passwd YOURNAME
+```
+
+Install openssh ans start it:
+```
+pacman -Syyu
+pacman -S openssh
+systemctl enable sshd && systemctl start sshd
+```
+
+You can now connect to your Thinkpad via `ssh` and proceed:
+```
+# in case you don't have it already, generate ssh keypair:
+# ssh-keygen
+ssh-copy-id YOURNAME@THINKPAD_ADDRESS
+# enter user password, now you can connect with your key
+ssh YOURNAME@THINKPAD_ADDRESS
+```
+
+Install various useful utils:
+```
+sudo pacman -S python python pip mc zip p7zip unrar htop lsof strace git git-lfs mercurial
+```
+
+Get `yay` - AUR/pacman helper written in Go:
+```
+mkdir git && cd git
+git clone https://aur.archlinux.org/yay.git
+cd yay && makepkg -si
+yay -Syyu
 ```
