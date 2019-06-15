@@ -77,6 +77,22 @@ Target partitions setup will look like this:
 ```
 Use `cfdisk /dev/nvme0n1` or `parted /dev/nvme0n1` to add linux partitions.
 
+##### Use UUIDs
+Note: though using old-school device names (e.g. /dev/nvme0n1) could look OK for most users, we are going to use UUIDs.
+It can be useful in case you are installing Arch on external USB drive (or, like in my situation, if your Winows 10 decided it's time to upgrade from 1809 to 1903 and add new partition, which shifts device partitions numbers).
+
+Get UUIDs:
+```
+blkid
+/dev/nvme0n1: PTUUID="48f81834-1786-45cb-81c9-723157985d2b" PTTYPE="gpt"
+/dev/nvme0n1p1: LABEL="SYSTEM" UUID="5052-19C4" TYPE="vfat" PARTLABEL="EFI system partition" PARTUUID="e8559af3-ed5e-4f88-ac3a-be34cafff1d9"
+/dev/nvme0n1p2: PARTLABEL="Microsoft reserved partition" PARTUUID="37c6b363-727f-4d57-8e73-25eac91b393d"
+/dev/nvme0n1p3: TYPE="BitLocker" PARTLABEL="Basic data partition" PARTUUID="ef301617-c94c-4a55-8577-97e43b72eb58"
+/dev/nvme0n1p4: LABEL="WinRE_DRV" UUID="DA9C54AA9C5482C5" TYPE="ntfs" PARTLABEL="Basic data partition" PARTUUID="ac8be247-ef74-430e-9c02-af9e9ed2f7e0"
+/dev/nvme0n1p5: PARTLABEL="nvme_swap" PARTUUID="ad3f7e54-4bf9-4432-be2c-d941d069637b"
+/dev/nvme0n1p6: UUID="a252825e-6321-424c-b2bb-04375dff8327" TYPE="crypto_LUKS" PARTLABEL="nvme_system" PARTUUID="7ebc59d4-2081-4d63-ae69-0619233e6ef3"
+```
+
 Encrypt & open root partition:   
 ```
 cryptsetup luksFormat --align-payload=8192 -s 256 -c aes-xts-plain64 /dev/nvme0n1p6
