@@ -136,7 +136,7 @@ locale-gen
 localectl set-locale LANG=en_US.UTF-8
 timedatectl set-ntp 1
 timedatectl set-timezone Europe/Minsk
-pacman -S kbd-ru-keymaps terminus-font
+pacman -S terminus-font
 ```
 
 Edit `/etc/vconsole.conf`:
@@ -164,7 +164,7 @@ pacman -Syu base-devel btrfs-progs intel-ucode
 
 Edit `/etc/mkinitcpio.conf` and make sure this listed in MODULES:
 ```
-MODULES="base udev autodetect modconf block keyboard keymap encrypt filesystems btrfs"
+HOOKS=(base udev autodetect modconf block keyboard keymap encrypt filesystems btrfs)
 ```
 
 Then run mkinitcpio, set root password and exit systemd:
