@@ -199,7 +199,7 @@ reboot
 
 System is ready to boot. Login with root and password set before, then you can start using (sort of, it's still has almost no packages installed). Proceed next to install basic software, KDE Plasma and other additional applications.
 
-#### Install packages
+### Install additional packages
 Connect to wired or wireless network:
 ```
 wifi-menu
