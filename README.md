@@ -63,3 +63,119 @@ $ ip a
     inet6 xxxx::xxxx:xxxx:xxxx:xxxx/64 scope link
        valid_lft forever preferred_lft forever
 ```
+
+#### Partition NVMe drive
+Target partitions setup will look like this:
+```
+/dev/nvme0n1p1 (260M)     EFI
+/dev/nvme0n1p2 (16M)      Microsoft reserved
+/dev/nvme0n1p3 (100.6G)   Microsoft basic data (system)
+/dev/nvme0n1p4 (1000M)    Lenovo recovery
+
+/dev/nvme0n1p5 (16.5G)    Linux swap
+/dev/nvme0n1p6 (385G)     Linux
+```
+Use `cfdisk /dev/nvme0n1` or `parted /dev/nvme0n1` to add linux partitions.
+
+Encrypt & open root partition:   
+```
+cryptsetup luksFormat --align-payload=8192 -s 256 -c aes-xts-plain64 /dev/nvme0n1p6
+cryptsetup open /dev/nvme0n1p6 cryptsystem
+```
+
+Encrypt and use swap partition:
+```
+cryptsetup open --type plain --key-file /dev/urandom /dev/nvme0n1p5 swap
+mkswap -L swap /dev/mapper/swap
+swapon -L swap
+```
+
+Create & mount btrfs:
+```
+mkfs.btrfs --force --label btrfs_system /dev/mapper/cryptsystem
+o=defaults,x-mount.mkdir
+o_btrfs=$o,compress=zstd,noatime,space_cache=v2
+mount -t btrfs LABEL=btrfs_system /mnt
+```
+
+Create btrfs subvolumes:
+```
+btrfs subvolume create /mnt/root
+btrfs subvolume create /mnt/home
+btrfs subvolume create /mnt/snapshots
+umount -R /mnt
+mount -t btrfs -o subvol=root,$o_btrfs LABEL=btrfs_system /mnt
+mount -t btrfs -o subvol=home,$o_btrfs LABEL=btrfs_system /mnt/home
+mount -t btrfs -o subvol=snapshots,$o_btrfs LABEL=btrfs_system /mnt/.snapshots
+```
+
+Mount EFI partition:
+```
+mkdir /mnt/boot
+mount /dev/nvme0n1p1 /mnt/boot
+```
+
+#### Prepare base system
+Edit `/etc/pacman.d/mirrorlist` and make sure the nearest mirror is on top of the list.
+
+Install basic packages to root partition, fix and add proper swap partition to `/etc/crypttab` and boot to the base system via systemd:
+```
+pacstrap /mnt base vim
+genfstab -L -p /mnt >> /mnt/etc/fstab
+sed -i "s+LABEL=swap+/dev/mapper/swap+" /mnt/etc/fstab
+echo "swap /dev/nvme0n1p5 /dev/urandom swap,cipher=aes-cbc-essiv:sha256,size=256" >> /mnt/etc/crypttab
+cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+systemd-nspawn -bD /mnt
+```
+
+#### Configure system
+Setup locale:
+```
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+localectl set-locale LANG=en_US.UTF-8
+timedatectl set-ntp 1
+timedatectl set-timezone Europe/Minsk
+pacman -S kbd-ru-keymaps terminus-font
+```
+
+Edit `/etc/vconsole.conf`:
+
+```
+LOCALE="en_US.UTF-8"
+HARDWARECLOCK="UTC"
+TIMEZONE="Europe/Minsk"
+KEYMAP="ru"
+CONSOLEFONT="cyr-sun16"
+CONSOLEMAP=""
+USECOLOR="yes"
+```
+
+Set hostname:
+```
+hostnamectl set-hostname YOU_HOSTNAME
+```
+
+#### Setup bootloader
+Install required packages:
+```
+pacman -Syu base-devel btrfs-progs intel-ucode
+```
+
+Edit `/etc/mkinitcpio.conf` and make sure this listed in MODULES:
+```
+MODULES="base udev autodetect modconf block keyboard keymap encrypt filesystems btrfs"
+```
+
+Then run mkinitcpio, set root password and exit systemd:
+```
+mkinitcpio -p linux
+passwd
+poweroff
+```
+
+Add boot record to EFI. `cryptdevice=UUID=*` is /dev/nvme0n1p6 UUID, which can be seen by running `blkid` command.
+```
+efibootmgr -v
+efibootmgr -d /dev/nvme0n1 -p 1 -c -L "Arch Linux" -l /vmlinuz-linux -u "cryptdevice=UUID=your_uuid_goes_here:cryptsystem root=/dev/mapper/cryptsystem rw rootflags=subvol=root initrd=/intel-ucode.img initrd=/initramfs-linux.img"
+```
