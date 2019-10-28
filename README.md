@@ -79,7 +79,7 @@ Target partitions setup will look like this:
 Use `cfdisk /dev/nvme0n1` or `parted /dev/nvme0n1` to add linux partitions.
 
 ##### Use UUIDs
-Note: though using old-school device names (e.g. /dev/nvme0n1) could look OK for most users, we are going to use UUIDs.
+**Note**: though using old-school device names (e.g. /dev/nvme0n1) could work OK for most users, we are going to use UUIDs.
 It can be useful in case you are installing Arch on external USB drive (or, like in my situation, if your Winows 10 decided it's time to upgrade from 1809 to 1903 and add new partition, which shifts device partitions numbers).
 
 Get UUIDs:
