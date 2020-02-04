@@ -1,6 +1,7 @@
-# Arch on Thinkpad T490 (BTRFS + encryption + dual-boot)
+# Arch on Thinkpad T490 (encryption + dual-boot)
 
-**Note 1:** there is also additional packages install guide.
+**Note 1:** there is also additional packages install guide. 
+
 **Note 2:** full commands list is located in the end of document.
 
 Was tested on:
@@ -107,23 +108,10 @@ mkswap -L swap /dev/mapper/swap
 swapon -L swap
 ```
 
-Create & mount btrfs:
+Create & mount etx4 filesystem:
 ```
-mkfs.btrfs --force --label btrfs_system /dev/mapper/cryptsystem
-o=defaults,x-mount.mkdir
-o_btrfs=$o,compress=zstd,noatime,space_cache=v2
-mount -t btrfs LABEL=btrfs_system /mnt
-```
-
-Create btrfs subvolumes:
-```
-btrfs subvolume create /mnt/root
-btrfs subvolume create /mnt/home
-btrfs subvolume create /mnt/snapshots
-umount -R /mnt
-mount -t btrfs -o subvol=root,$o_btrfs LABEL=btrfs_system /mnt
-mount -t btrfs -o subvol=home,$o_btrfs LABEL=btrfs_system /mnt/home
-mount -t btrfs -o subvol=snapshots,$o_btrfs LABEL=btrfs_system /mnt/.snapshots
+mkfs.ext4 --label root_system /dev/mapper/cryptsystem
+mount LABEL=root_system /mnt
 ```
 
 Mount EFI partition:
@@ -176,12 +164,12 @@ hostnamectl set-hostname YOU_HOSTNAME
 #### Setup bootloader
 Install required packages:
 ```
-pacman -Syu base-devel btrfs-progs intel-ucode
+pacman -Syu base-devel intel-ucode
 ```
 
 Edit `/etc/mkinitcpio.conf` and make sure this listed in MODULES:
 ```
-HOOKS=(base udev autodetect modconf block keyboard keymap encrypt filesystems btrfs)
+HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt filesystems fsck)
 ```
 
 Then run mkinitcpio, set root password and exit systemd:
